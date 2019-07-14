@@ -27,7 +27,7 @@ class NextWinAI(AI):
             g.play(pos)
             if g.win() != 0:
                 return pos
-            
+
         return random.choice(moves)
 
 class Board:
@@ -46,21 +46,24 @@ class Board:
             -1: O win
 
         """
-        # horizontal wins
-        if self.state[0] == self.state[1] and self.state[1] == self.state[2] and self.state[0] != 0:
-            return self.state[0]
-        if self.state[3] == self.state[4] and self.state[4] == self.state[5] and self.state[3] != 0:
-            return self.state[3]
-        if self.state[6] == self.state[7] and self.state[7] == self.state[8] and self.state[6] != 0:
-            return self.state[6]
-        # vertical wins
-        for i in range(3):
-            if self.state[0+i] == self.state[3+i] and self.state[3+i] == self.state[6+i] and self.state[0+i] != 0:
-                return self.state[0+i]
-        # horizontal wins
-        if (((self.state[0] == self.state[4] and self.state[4] == self.state[8]) or
-            (self.state[2] == self.state[4] and self.state[4] == self.state[6])) and self.state[4] != 0):
-                return self.state[4]
+    def win(self):
+        """Check for win condition.
+
+        Returns
+            1: X wins
+            0: Either cat or game still in progress
+            -1: O win
+
+        """
+        winning_combinations = [[0, 1, 2], [3, 4, 5], [6, 7, 8],
+                                [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                                [0, 4, 8], [2, 4, 6]]
+
+        # check if any winning combinations are all 1s or -1s
+        for i, j, k in winning_combinations:
+            if self.state[i] == self.state[j] == self.state[k] != 0:
+                return self.state[i]  # return winning player
+        # otherwise return 0
         return 0
 
     def tie(self):
