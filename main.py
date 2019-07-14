@@ -2,7 +2,33 @@
 # print("Tensorflow successfully loaded")
 # import numpy as np
 # print("Numpy successfully loaded\n")
+import random
+from copy import deepcopy
 
+class AI:
+    """Template class for all AI"""
+    def __init__(self, name):
+        self.name = name
+
+    def move(self, board):
+        return 0
+
+class RandomAI(AI):
+    """AI picks a random legal move"""
+    def move(self, board):
+        return random.choice(board.legalMoves())
+
+class NextWinAI(AI):
+    """Checks to see if any legal moves are winning moves and plays them, if not, then picks randomly"""
+    def move(self, game):
+        moves = game.legalMoves()
+        for pos in moves:
+            g = deepcopy(game)
+            g.play(pos)
+            if g.win() != 0:
+                return pos
+            
+        return random.choice(moves)
 
 class Board:
     """Class for tic-tac-toe style board game."""
@@ -68,18 +94,30 @@ class Board:
     def move(self, p, pos):
         """Check if move is valid.
 
-        p: 1 (player X) or 0 (player O)
+        p: 1 (player X) or -1 (player O)
         pos: cell (board position)
 
-        If move is valid, set cell to p.
-        Otherwise, return exception.
+        If move is valid, set cell to p and return true.
+        Otherwise, return false.
 
         """
-        if self.state[pos] == 0:
+        if self.legalMove(pos):
             self.state[pos] = p
+            return True
         else:
-            raise Exception('Invalid move, space already occupied')
+            return False
 
+    def legalMoves(self):
+        """Returns a list of all legal moves"""
+        moves = []
+        for i in range(9):
+            if self.legalMove(i):
+                moves.append(i)
+        return moves
+
+    def legalMove(self, pos):
+        """Returns true if legal move, else false"""
+        return self.state[pos] == 0
 
 class Game:
     """Class for playing tic-tac-toe."""
@@ -94,25 +132,30 @@ class Game:
         self._turn = turn
 
     def whoTurn(self):
-        """Return current player (either X or O)."""
+        """Return current player (either 1 or -1)."""
+        return self._turn
+
+    def whoTurnStr(self):
+        """Returns user friendly player"""
         if self._turn == 1:
             return 'X'
-        return 'O'
+        else:
+            return 'O'
 
     def newTurn(self):
         """Switch current player."""
-        if self._turn == 1:
-            self._turn = -1
-        else:
-            self._turn = 1
+        self._turn = self._turn * -1
 
     def play(self, pos):
         """Make move by current player in position given by pos.
 
-        Return exception raised by board if move is invalid.
+        Return true if move made successfully, false if not.
         """
-        self.board.move(self._turn, pos)
-        self.newTurn()
+        if self.board.move(self._turn, pos):
+            self.newTurn()
+            return True
+        else:
+            return False
 
     def win(self):
         """Return if game is won and by which player."""
@@ -138,17 +181,46 @@ class Game:
         """Pretty print tic-tac-toe board."""
         self.board.printBoard()
 
+    def legalMoves(self):
+        """Returns list of legal moves on internal board object"""
+        return self.board.legalMoves()
+
 
 game = Game()
+##while game.win() == 0 and not game.tie():
+##    print("{}'s turn, input move".format(game.whoTurnStr()))
+##    game.printBoard()
+##    try:
+##        pos = int(input())-1
+##        if not game.play(pos):
+##            print("Illegal move!")
+##    except:
+##        print("Move not recognized")
+##
+##if not game.tie():
+##    print("{} wins!".format(game.winStr()))
+##else:
+##    print("Tie")
+##game.printBoard()
+
+ai = NextWinAI("Howard")
 while game.win() == 0 and not game.tie():
-    print("{}'s turn, input move".format(game.whoTurn()))
     game.printBoard()
-    try:
-        pos = int(input()) - 1
-        game.play(pos)
-    except:
-        print("Invalid move!")
+    if game.whoTurn() == 1:
+        print("Player turn, input move")
+        try:
+            pos = int(input())-1
+            if not game.play(pos):
+                print("Illegal move!")
+        except:
+            print("Move not recognized")
+    else:
+        print("Computer turn")
+        game.play(ai.move(game))
+
+print(game.win(), game.tie())
+game.printBoard()
 if not game.tie():
-    print("{} wins!".format(game.win()))
+    print("{} wins!".format(game.winStr()))
 else:
     print("Tie")
