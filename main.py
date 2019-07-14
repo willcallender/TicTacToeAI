@@ -5,22 +5,35 @@
 import random
 from copy import deepcopy
 
+
 class AI:
-    """Template class for all AI"""
+    """Template class for all AI."""
+
     def __init__(self, name):
+        """Assign name for player."""
         self.name = name
 
     def move(self, board):
-        return 0
+        """Make player move. Implemented in child classes."""
+        pass
+
 
 class RandomAI(AI):
-    """AI picks a random legal move"""
+    """AI picks a random legal move."""
+
     def move(self, board):
+        """Make random choice from legal moves."""
         return random.choice(board.legalMoves())
 
+
 class NextWinAI(AI):
-    """Checks to see if any legal moves are winning moves and plays them, if not, then picks randomly"""
+    """Play winning move, otherwise play random move."""
+
     def move(self, game):
+        """Check if a winning move exists.
+
+        Return winning move, if available; otherwise, return random move.
+        """
         moves = game.legalMoves()
         for pos in moves:
             g = deepcopy(game)
@@ -30,6 +43,7 @@ class NextWinAI(AI):
 
         return random.choice(moves)
 
+
 class Board:
     """Class for tic-tac-toe style board game."""
 
@@ -37,15 +51,6 @@ class Board:
         """Initialize board state to a list of zeros."""
         self.state = state
 
-    def win(self):
-        """Check for win condition.
-
-        Returns
-            1: X wins
-            0: Either cat or game still in progress
-            -1: O win
-
-        """
     def win(self):
         """Check for win condition.
 
@@ -111,7 +116,7 @@ class Board:
             return False
 
     def legalMoves(self):
-        """Returns a list of all legal moves"""
+        """Return a list of all legal moves."""
         moves = []
         for i in range(9):
             if self.legalMove(i):
@@ -119,8 +124,9 @@ class Board:
         return moves
 
     def legalMove(self, pos):
-        """Returns true if legal move, else false"""
+        """Return true if legal move, else false."""
         return self.state[pos] == 0
+
 
 class Game:
     """Class for playing tic-tac-toe."""
@@ -139,7 +145,7 @@ class Game:
         return self._turn
 
     def whoTurnStr(self):
-        """Returns user friendly player"""
+        """Return user friendly player."""
         if self._turn == 1:
             return 'X'
         else:
@@ -149,7 +155,23 @@ class Game:
         """Switch current player."""
         self._turn = self._turn * -1
 
-    def play(self, pos):
+    def play(self):
+        """Play tic-tac-toe."""
+        while game.win() == 0 and not game.tie():
+            game.printBoard()
+            if game.whoTurn() == 1:
+                print("Player turn, input move")
+                try:
+                    pos = int(input()) - 1
+                    if not game.play(pos):
+                        print("Illegal move!")
+                except:
+                    print("Move not recognized")
+            else:
+                print("Computer turn")
+                game.play(ai.move(game))
+
+    def move(self, pos):
         """Make move by current player in position given by pos.
 
         Return true if move made successfully, false if not.
@@ -185,41 +207,13 @@ class Game:
         self.board.printBoard()
 
     def legalMoves(self):
-        """Returns list of legal moves on internal board object"""
+        """Return list of legal moves on internal board object."""
         return self.board.legalMoves()
 
 
 game = Game()
-##while game.win() == 0 and not game.tie():
-##    print("{}'s turn, input move".format(game.whoTurnStr()))
-##    game.printBoard()
-##    try:
-##        pos = int(input())-1
-##        if not game.play(pos):
-##            print("Illegal move!")
-##    except:
-##        print("Move not recognized")
-##
-##if not game.tie():
-##    print("{} wins!".format(game.winStr()))
-##else:
-##    print("Tie")
-##game.printBoard()
-
 ai = NextWinAI("Howard")
-while game.win() == 0 and not game.tie():
-    game.printBoard()
-    if game.whoTurn() == 1:
-        print("Player turn, input move")
-        try:
-            pos = int(input())-1
-            if not game.play(pos):
-                print("Illegal move!")
-        except:
-            print("Move not recognized")
-    else:
-        print("Computer turn")
-        game.play(ai.move(game))
+game.play()
 
 print(game.win(), game.tie())
 game.printBoard()
