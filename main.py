@@ -37,7 +37,7 @@ class NextWinAI(AI):
         moves = game.legalMoves()
         for pos in moves:
             g = deepcopy(game)
-            g.play(pos)
+            g.move(pos)
             if g.win() != 0:
                 return pos
 
@@ -157,19 +157,19 @@ class Game:
 
     def play(self):
         """Play tic-tac-toe."""
-        while game.win() == 0 and not game.tie():
-            game.printBoard()
-            if game.whoTurn() == 1:
+        while self.win() == 0 and not self.tie():
+            self.printBoard()
+            if self.whoTurn() == 1:
                 print("Player turn, input move")
                 try:
                     pos = int(input()) - 1
-                    if not game.play(pos):
+                    if not self.move(pos):
                         print("Illegal move!")
                 except:
                     print("Move not recognized")
             else:
                 print("Computer turn")
-                game.play(ai.move(game))
+                self.move(ai.move(game))
 
     def move(self, pos):
         """Make move by current player in position given by pos.
@@ -209,7 +209,6 @@ class Game:
     def legalMoves(self):
         """Return list of legal moves on internal board object."""
         return self.board.legalMoves()
-
 
 game = Game()
 ai = NextWinAI("Howard")
