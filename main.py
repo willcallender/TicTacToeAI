@@ -4,16 +4,16 @@
 # print("Numpy successfully loaded\n")
 import random
 from copy import deepcopy
-
+import statistics
 
 class AI:
     """Template class for all AI."""
 
-    def __init__(self, name):
+    def __init__(self, name="Howard"):
         """Assign name for player."""
         self.name = name
 
-    def move(self, board):
+    def move(self, game):
         """Make player move. Implemented in child classes."""
         pass
 
@@ -21,9 +21,9 @@ class AI:
 class RandomAI(AI):
     """AI picks a random legal move."""
 
-    def move(self, board):
+    def move(self, game):
         """Make random choice from legal moves."""
-        return random.choice(board.legalMoves())
+        return random.choice(game.legalMoves())
 
 
 class NextWinAI(AI):
@@ -43,6 +43,26 @@ class NextWinAI(AI):
 
         return random.choice(moves)
 
+class WinPreventAI(AI):
+    """Does the same as NextWinAI, but also checks opponent next move to avoid loss"""
+
+    def move(self, game):
+        """Play winning move, then check if opponent can win in next turn and play that.
+        if none of the above; play random move"""
+        moves = game.legalMoves()
+        for pos in moves:
+            g = deepcopy(game)
+            g.move(pos)
+            if g.win() != 0:
+                return pos
+            nextMoves = g.legalMoves()
+            for p in nextMoves:
+                g2 = deepcopy(g)
+                g2.move(p)
+                if g2.win() != 0:
+                    return p
+        
+        return random.choice(moves)
 
 class Board:
     """Class for tic-tac-toe style board game."""
@@ -155,21 +175,53 @@ class Game:
         """Switch current player."""
         self._turn = self._turn * -1
 
-    def play(self):
-        """Play tic-tac-toe."""
-        while self.win() == 0 and not self.tie():
-            self.printBoard()
-            if self.whoTurn() == 1:
-                print("Player turn, input move")
+    def play(self, quiet=False, mode=0, ai=NextWinAI(), ai2=NextWinAI(name = "Harold")):
+        """Play tic-tac-toe. In PvP mode (0), PvC (1) or CvC (2)"""
+        if mode == 0:
+            while self.win() == 0 and not self.tie():
+                self.printBoard()
+                print("{}'s turn, input move".format(self.whoTurnStr()))
                 try:
-                    pos = int(input()) - 1
+                    pos = int(input())-1
                     if not self.move(pos):
                         print("Illegal move!")
                 except:
                     print("Move not recognized")
-            else:
-                print("Computer turn")
-                self.move(ai.move(game))
+        elif mode == 1:
+            while self.win() == 0 and not self.tie():
+                self.printBoard()
+                if self.whoTurn() == 1:
+                    print("Player turn, input move")
+                    try:
+                        pos = int(input()) - 1
+                        if not self.move(pos):
+                            print("Illegal move!")
+                    except:
+                        print("Move not recognized")
+                else:
+                    print("Computer turn")
+                    self.move(ai.move(self))
+        elif mode == 2:
+            while self.win() == 0 and not self.tie():
+                if not quiet:
+                    self.printBoard()
+                if self.whoTurn == 1:
+                    if not quiet:
+                        print('X moving')
+                    self.move(ai.move(self))
+                else:
+                    if not quiet:
+                        print('O moving')
+                    self.move(ai2.move(self))
+        if not quiet:
+            self.printBoard()
+        if not self.tie() and not quiet:
+            print("{} wins!".format(self.winStr()))
+        elif not quiet:
+            print("Tie")
+        
+        return self.win(), self.tie()
+
 
     def move(self, pos):
         """Make move by current player in position given by pos.
@@ -210,13 +262,22 @@ class Game:
         """Return list of legal moves on internal board object."""
         return self.board.legalMoves()
 
-game = Game()
-ai = NextWinAI("Howard")
-game.play()
+n = 1000000
+record = []
+blankslate = [0 for i in range(9)]
+for i in range(n):
+    game = Game()
+    winner, tie = game.play(quiet=True, mode=2, ai=RandomAI(), ai2=WinPreventAI())
+    record.append(winner)
 
-print(game.win(), game.tie())
-game.printBoard()
-if not game.tie():
-    print("{} wins!".format(game.winStr()))
+allTie = [0 for _ in range(n)]
+allX = [1 for _ in range(n)]
+allO = [-1 for _ in range(n)]
+if record == allTie:
+    print('All tie')
+elif record == allX:
+    print('All X')
+elif record == allO:
+    print('All O')
 else:
-    print("Tie")
+    print('Not 100% consisitent', statistics.mean([x * 1.0 for x in record]))
