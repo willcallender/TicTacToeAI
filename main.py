@@ -1,10 +1,8 @@
 # import tensorflow as tf
 # print("Tensorflow successfully loaded")
-# import numpy as np
-# print("Numpy successfully loaded\n")
 import random
 from copy import deepcopy
-import statistics
+import numpy as np
 
 class AI:
     """Template class for all AI."""
@@ -61,15 +59,15 @@ class WinPreventAI(AI):
                 g2.move(p)
                 if g2.win() != 0:
                     return p
-        
+
         return random.choice(moves)
 
 class Board:
     """Class for tic-tac-toe style board game."""
 
-    def __init__(self, state=[0, 0, 0, 0, 0, 0, 0, 0, 0]):
+    def __init__(self):
         """Initialize board state to a list of zeros."""
-        self.state = state
+        self.state = [0] * 9
 
     def win(self):
         """Check for win condition.
@@ -151,13 +149,13 @@ class Board:
 class Game:
     """Class for playing tic-tac-toe."""
 
-    def __init__(self, board=Board(), turn=1):
+    def __init__(self, turn=1):
         """Initialize board and starting player.
 
         board is an instance of the Board class.
         turn is either 1 (player X) or -1 (player O).
         """
-        self.board = board
+        self.board = Board()
         self._turn = turn
 
     def whoTurn(self):
@@ -219,7 +217,7 @@ class Game:
             print("{} wins!".format(self.winStr()))
         elif not quiet:
             print("Tie")
-        
+
         return self.win(), self.tie()
 
 
@@ -262,7 +260,7 @@ class Game:
         """Return list of legal moves on internal board object."""
         return self.board.legalMoves()
 
-n = 1000000
+n = 1000
 record = []
 blankslate = [0 for i in range(9)]
 for i in range(n):
@@ -280,4 +278,4 @@ elif record == allX:
 elif record == allO:
     print('All O')
 else:
-    print('Not 100% consisitent', statistics.mean([x * 1.0 for x in record]))
+    print('Not 100% consisitent', np.mean(record))
