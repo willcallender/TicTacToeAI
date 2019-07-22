@@ -4,8 +4,8 @@ import random
 from copy import deepcopy
 import numpy as np
 
-class AI:
-    """Template class for all AI."""
+class Player:
+    """Template class for all Players (human and computer)."""
 
     def __init__(self, name="Howard"):
         """Assign name for player."""
@@ -15,8 +15,16 @@ class AI:
         """Make player move. Implemented in child classes."""
         pass
 
+class Human(Player):
+    """Prompts user for moves and returns them to game"""
+    
+    def move(self, game):
+        game.printBoard()
+        print("Input move")
+        return int(input()) - 1
+                
 
-class RandomAI(AI):
+class RandomAI(Player):
     """AI picks a random legal move."""
 
     def move(self, game):
@@ -24,7 +32,7 @@ class RandomAI(AI):
         return random.choice(game.legalMoves())
 
 
-class NextWinAI(AI):
+class NextWinAI(Player):
     """Play winning move, otherwise play random move."""
 
     def move(self, game):
@@ -41,7 +49,7 @@ class NextWinAI(AI):
 
         return random.choice(moves)
 
-class WinPreventAI(AI):
+class WinPreventAI(Player):
     """Does the same as NextWinAI, but also checks opponent next move to avoid loss"""
 
     def move(self, game):
@@ -53,12 +61,12 @@ class WinPreventAI(AI):
             g.move(pos)
             if g.win() != 0:
                 return pos
-            nextMoves = g.legalMoves()
-            for p in nextMoves:
-                g2 = deepcopy(g)
-                g2.move(p)
-                if g2.win() != 0:
-                    return p
+        for pos in moves:
+            g = deepcopy(game)
+            g._turn = game.whoTurn() * -1
+            g.move(pos)
+            if g.win() != 0:
+                return pos
 
         return random.choice(moves)
 
@@ -173,53 +181,29 @@ class Game:
         """Switch current player."""
         self._turn = self._turn * -1
 
-    def play(self, quiet=False, mode=0, ai=NextWinAI(), ai2=NextWinAI(name = "Harold")):
-        """Play tic-tac-toe. In PvP mode (0), PvC (1) or CvC (2)"""
-        if mode == 0:
-            while self.win() == 0 and not self.tie():
-                self.printBoard()
-                print("{}'s turn, input move".format(self.whoTurnStr()))
+    def play(self, player1, player2):
+        """Play tic-tac-toe"""
+        while self.win() == 0 and not self.tie():
+            if self._turn == 1:
                 try:
-                    pos = int(input())-1
-                    if not self.move(pos):
+                    if not self.move(player1.move(self)):
+                        print("Illegal move!")
+                    else:
+                        self.newTurn()
+                except:
+                    print("Move not recognized")
+            else:
+                try:
+                    if not self.move(player1.move(self)):
                         print("Illegal move!")
                 except:
                     print("Move not recognized")
-        elif mode == 1:
-            while self.win() == 0 and not self.tie():
-                self.printBoard()
-                if self.whoTurn() == 1:
-                    print("Player turn, input move")
-                    try:
-                        pos = int(input()) - 1
-                        if not self.move(pos):
-                            print("Illegal move!")
-                    except:
-                        print("Move not recognized")
-                else:
-                    print("Computer turn")
-                    self.move(ai.move(self))
-        elif mode == 2:
-            while self.win() == 0 and not self.tie():
-                if not quiet:
-                    self.printBoard()
-                if self.whoTurn == 1:
-                    if not quiet:
-                        print('X moving')
-                    self.move(ai.move(self))
-                else:
-                    if not quiet:
-                        print('O moving')
-                    self.move(ai2.move(self))
-        if not quiet:
-            self.printBoard()
-        if not self.tie() and not quiet:
-            print("{} wins!".format(self.winStr()))
-        elif not quiet:
-            print("Tie")
-
         return self.win(), self.tie()
-
+    
+    def reset(self):
+        """Resets the board and turn"""
+        self.board = Board()
+        self._turn = 1
 
     def move(self, pos):
         """Make move by current player in position given by pos.
@@ -260,22 +244,55 @@ class Game:
         """Return list of legal moves on internal board object."""
         return self.board.legalMoves()
 
-n = 1000
-record = []
-blankslate = [0 for i in range(9)]
-for i in range(n):
-    game = Game()
-    winner, tie = game.play(quiet=True, mode=2, ai=RandomAI(), ai2=WinPreventAI())
-    record.append(winner)
+g = Game()
+g.play(Human(), WinPreventAI())
 
-allTie = [0 for _ in range(n)]
-allX = [1 for _ in range(n)]
-allO = [-1 for _ in range(n)]
-if record == allTie:
-    print('All tie')
-elif record == allX:
-    print('All X')
-elif record == allO:
-    print('All O')
-else:
-    print('Not 100% consisitent', np.mean(record))
+#n = 10000
+#randomWins = 0
+#nextWinWins = 0
+#winPreventWins = 0
+#game = Game()
+#for i in range(n):
+#    game.reset()
+#    (winner, tie) = game.play(RandomAI(), NextWinAI())
+#    if winner == 1:
+#        randomWins += 1
+#    elif winner == -1:
+#        nextWinWins += 1
+#    
+#    game.reset()
+#    (winner, tie) = game.play(NextWinAI(), RandomAI())
+#    if winner == 1:
+#        nextWinWins += 1
+#    elif winner == -1:
+#        randomWins += 1
+#    
+#    game.reset()
+#    (winner, tie) = game.play(NextWinAI(), WinPreventAI())
+#    if winner == 1:
+#        nextWinWins += 1
+#    elif winner == -1:
+#        winPreventWins += 1
+#    
+#    game.reset()
+#    (winner, tie) = game.play(WinPreventAI(), NextWinAI())
+#    if winner == 1:
+#        winPreventWins += 1
+#    elif winner == -1:
+#        nextWinWins += 1
+#    
+#    game.reset()
+#    (winner, tie) = game.play(RandomAI(), WinPreventAI())
+#    if winner == 1:
+#        randomWins += 1
+#    elif winner == -1:
+#        winPreventWins += 1
+#    
+#    game.reset()
+#    (winner, tie) = game.play(WinPreventAI(), RandomAI())
+#    if winner == 1:
+#        winPreventWins += 1
+#    elif winner == -1:
+#        randomWins += 1
+#
+#print(randomWins, nextWinWins, winPreventWins)
