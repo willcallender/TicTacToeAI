@@ -71,7 +71,7 @@ class WinPreventAI(Player):
                 return pos
         for pos in moves:
             g = deepcopy(game)
-            g._turn = game.whoTurn() * -1
+            g._turn = g.whoTurn() * -1
             g.move(pos)
             if g.win() != 0:
                 return pos
@@ -252,55 +252,55 @@ class Game:
         return self.board.legalMoves()
 
 
-g = Game(show_moves=True)
-g.play(NextWinAI(), WinPreventAI())
+#g = Game(show_moves=True)
+#g.play(NextWinAI(), WinPreventAI())
 
-#n = 10000
-#randomWins = 0
-#nextWinWins = 0
-#winPreventWins = 0
-#game = Game()
-#for i in range(n):
-#    game.reset()
-#    (winner, tie) = game.play(RandomAI(), NextWinAI())
-#    if winner == 1:
-#        randomWins += 1
-#    elif winner == -1:
-#        nextWinWins += 1
-#
-#    game.reset()
-#    (winner, tie) = game.play(NextWinAI(), RandomAI())
-#    if winner == 1:
-#        nextWinWins += 1
-#    elif winner == -1:
-#        randomWins += 1
-#
-#    game.reset()
-#    (winner, tie) = game.play(NextWinAI(), WinPreventAI())
-#    if winner == 1:
-#        nextWinWins += 1
-#    elif winner == -1:
-#        winPreventWins += 1
-#
-#    game.reset()
-#    (winner, tie) = game.play(WinPreventAI(), NextWinAI())
-#    if winner == 1:
-#        winPreventWins += 1
-#    elif winner == -1:
-#        nextWinWins += 1
-#
-#    game.reset()
-#    (winner, tie) = game.play(RandomAI(), WinPreventAI())
-#    if winner == 1:
-#        randomWins += 1
-#    elif winner == -1:
-#        winPreventWins += 1
-#
-#    game.reset()
-#    (winner, tie) = game.play(WinPreventAI(), RandomAI())
-#    if winner == 1:
-#        winPreventWins += 1
-#    elif winner == -1:
-#        randomWins += 1
-#
-#print(randomWins, nextWinWins, winPreventWins)
+n = 10000
+randomWins = 0
+nextWinWins = 0
+winPreventWins = 0
+game = Game()
+for i in range(n):
+    game.reset()
+    (winner, tie) = game.play(RandomAI(), NextWinAI())
+    if winner == 1:
+        randomWins += 1
+    elif winner == -1:
+        nextWinWins += 1
+
+    game.reset()
+    (winner, tie) = game.play(NextWinAI(), RandomAI())
+    if winner == 1:
+        nextWinWins += 1
+    elif winner == -1:
+        randomWins += 1
+
+    game.reset()
+    (winner, tie) = game.play(NextWinAI(), WinPreventAI())
+    if winner == 1:
+        nextWinWins += 1
+    elif winner == -1:
+        winPreventWins += 1
+
+    game.reset()
+    (winner, tie) = game.play(WinPreventAI(), NextWinAI())
+    if winner == 1:
+        winPreventWins += 1
+    elif winner == -1:
+        nextWinWins += 1
+
+    game.reset()
+    (winner, tie) = game.play(RandomAI(), WinPreventAI())
+    if winner == 1:
+        randomWins += 1
+    elif winner == -1:
+        winPreventWins += 1
+
+    game.reset()
+    (winner, tie) = game.play(WinPreventAI(), RandomAI())
+    if winner == 1:
+        winPreventWins += 1
+    elif winner == -1:
+        randomWins += 1
+
+print(randomWins, nextWinWins, winPreventWins)
