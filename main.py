@@ -47,7 +47,7 @@ class NextWinAI(Player):
         for pos in moves:
             g = deepcopy(game)
             g.move(pos)
-            if g.win() != 0:
+            if g.evaluate() in [1, -1]:
                 return pos
 
         return random.choice(moves)
@@ -67,16 +67,44 @@ class WinPreventAI(Player):
         for pos in moves:
             g = deepcopy(game)
             g.move(pos)
-            if g.win() != 0:
+            if g.evaluate() in [1, -1]:
                 return pos
         for pos in moves:
             g = deepcopy(game)
             g._turn = g.whoTurn() * -1
             g.move(pos)
-            if g.win() != 0:
+            if g.evaluate() in [1, -1]:
                 return pos
 
         return random.choice(moves)
+
+
+class MonteCarloAI:
+    """Implement simple Monte Carlo Search."""
+
+    def __init__(self, name="Monte Carlo", depth=25, turn=1):
+        """Assign name, random playout depth, and current turn."""
+        self.name = name
+        self.depth = depth
+        self.turn = turn
+
+    def move(self, game):
+        """Evaluate self.depth playouts for each legal move.
+
+        Return move with the best average score of random playouts.
+        """
+        moves = game.legalMoves()
+        evaluations = {}
+        for move in moves:
+            evaluations[move] = 0
+            for _ in range(self.depth):
+                g = Game()
+                g.board.state = [-self.turn * cell
+                                 for cell in game.board.state]
+                g.board.state[move] = -1
+                evaluation = (g.play(RandomAI(), RandomAI()) * -1 + 1) / 2
+                evaluations[move] += evaluation
+        return max(evaluations, key=evaluations.get)
 
 
 class Board:
@@ -85,6 +113,21 @@ class Board:
     def __init__(self):
         """Initialize board state to a list of zeros."""
         self.state = [0] * 9
+
+    def evaluate(self):
+        """Evaluate board.
+
+        Returns 'X', 'O', 'CAT', or None.
+
+        """
+        win = self.win()
+        if win:
+            return win
+        tie = self.tie()
+        if tie:
+            return 0
+        else:
+            return None
 
     def win(self):
         """Check for win condition.
@@ -194,7 +237,7 @@ class Game:
     def play(self, player1, player2):
         """Play tic-tac-toe."""
         players = {1: player1, -1: player2}
-        while self.win() == 0 and not self.tie():
+        while self.evaluate() is None:
             current_player = players[self._turn]
             move = current_player.move(self)
             try:
@@ -204,7 +247,7 @@ class Game:
                 print("Move not recognized")
             if self.show_moves:
                 self.printBoard()
-        return self.win(), self.tie()
+        return self.evaluate()
 
     def reset(self):
         """Reset the board and turn."""
@@ -221,6 +264,10 @@ class Game:
             return True
         else:
             return False
+
+    def evaluate(self):
+        """Return board evaluation."""
+        return self.board.evaluate()
 
     def win(self):
         """Return if game is won and by which player."""
@@ -252,55 +299,41 @@ class Game:
         return self.board.legalMoves()
 
 
-#g = Game(show_moves=True)
-#g.play(NextWinAI(), WinPreventAI())
+def simulation(player1, player2, num_games=100, verbose=False):
+    """Docstring."""
+    player1.wins = 0
+    player2.wins = 0
+    ties = 0
+    game = Game()
+    for i in range(num_games):
+        game.reset()
+        if i % 2 == 0:
+            X, O = player1, player2
+            X.turn, O.turn = 1, -1
+        else:
+            X, O = player2, player1
+            X.turn, O.turn = -1, 1
+        evaluation = game.play(X, O)
+        if evaluation == 1:
+            X.wins += 1
+        elif evaluation == -1:
+            O.wins += 1
+        else:
+            ties += 1
+        if verbose:
+            # print("{} game(s) played ...".format(i + 1))
+            print("game {}--{}: {}, {}: {}, tie: {}".format(i + 1,
+                                                            player1.name,
+                                                            player1.wins,
+                                                            player2.name,
+                                                            player2.wins,
+                                                            ties))
+    return (player1.wins, player2.wins, ties)
 
-n = 10000
-randomWins = 0
-nextWinWins = 0
-winPreventWins = 0
-game = Game()
-for i in range(n):
-    game.reset()
-    (winner, tie) = game.play(RandomAI(), NextWinAI())
-    if winner == 1:
-        randomWins += 1
-    elif winner == -1:
-        nextWinWins += 1
 
-    game.reset()
-    (winner, tie) = game.play(NextWinAI(), RandomAI())
-    if winner == 1:
-        nextWinWins += 1
-    elif winner == -1:
-        randomWins += 1
-
-    game.reset()
-    (winner, tie) = game.play(NextWinAI(), WinPreventAI())
-    if winner == 1:
-        nextWinWins += 1
-    elif winner == -1:
-        winPreventWins += 1
-
-    game.reset()
-    (winner, tie) = game.play(WinPreventAI(), NextWinAI())
-    if winner == 1:
-        winPreventWins += 1
-    elif winner == -1:
-        nextWinWins += 1
-
-    game.reset()
-    (winner, tie) = game.play(RandomAI(), WinPreventAI())
-    if winner == 1:
-        randomWins += 1
-    elif winner == -1:
-        winPreventWins += 1
-
-    game.reset()
-    (winner, tie) = game.play(WinPreventAI(), RandomAI())
-    if winner == 1:
-        winPreventWins += 1
-    elif winner == -1:
-        randomWins += 1
-
-print(randomWins, nextWinWins, winPreventWins)
+player1 = WinPreventAI(name="WinPrevent")
+player2 = MonteCarloAI(name="MonteCarlo", depth=100)
+results = simulation(player1, player2, num_games=1000, verbose=True)
+print("{}: {}, {}: {}, tie: {}".format(player1.name, results[0],
+                                       player2.name, results[1],
+                                       results[2]))
