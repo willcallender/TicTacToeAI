@@ -97,9 +97,8 @@ class MonteCarloAI:
             evaluations[move] = 0
             for _ in range(self.depth):
                 g = Game()
-                g.board.state = [-self.turn * cell
-                                 for cell in game.board.state]
-                g.board.state[move] = -1
+                g.state = [-self.turn * cell for cell in game.state]
+                g.state[move] = -1
                 evaluation = (g.play(RandomAI(), RandomAI()) * -1 + 1) / 2
                 evaluations[move] += evaluation
         return max(evaluations, key=evaluations.get)

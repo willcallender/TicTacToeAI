@@ -24,7 +24,6 @@ def simulation(player1, player2, num_games=100, verbose=False):
         else:
             ties += 1
         if verbose:
-            # print("{} game(s) played ...".format(i + 1))
             print("game {}--{}: {}, {}: {}, tie: {}".format(i + 1,
                                                             player1.name,
                                                             player1.wins,
