@@ -296,42 +296,51 @@ class Game:
         """Return list of legal moves on internal board object."""
         return self.board.legalMoves()
 
-n=1000000
-games = []
-game = Game()
-pred = MonteCarloPredictor()
-ai = RandomAI()
-for i in range(n):
-    g = deepcopy(game)
-    while not g.over():
-        g.move(ai.move(g))
-        games.append((deepcopy(g.board.state), pred.winProb(deepcopy(g.board.state))))
-
-trainLen = int(len(games)*0.8)
-trainGames = [games[i] for i in range(trainLen)]
-testGames = [games[i] for i in range(trainLen, len(games))]
-xtrain = [i[0] for i in trainGames]
-ytrain = [i[1] for i in trainGames]
-xtest = [i[0] for i in testGames]
-ytest = [i[1] for i in testGames]
-npxtrain = np.array(xtrain)
-npytrain = np.array(ytrain)
-npxtest = np.array(xtest)
-npytest = np.array(ytest)
-np.savetxt('xtrain.txt', npxtrain)
-np.savetxt('ytrain.txt', npytrain)
-np.savetxt('xtest.txt', npxtest)
-np.savetxt('ytest.txt', npytest)
-
-#inputs = tf.keras.Input(shape=(9,))
-#x = tf.keras.layers.Dense(128, activation='elu')(inputs)
-#x = tf.keras.layers.Dense(128, activation='elu')(x)
-#x = tf.keras.layers.Dense(128, activation='relu')(x)
-#outputs = tf.keras.layers.Dense(1, activation='softmax')(x)
-#model = tf.keras.Model(inputs = inputs, outputs=outputs)
+#n=1000000
+#games = []
+#game = Game()
+#pred = MonteCarloPredictor()
+#ai = RandomAI()
+#for i in range(n):
+#    g = deepcopy(game)
+#    while not g.over():
+#        g.move(ai.move(g))
+#        games.append((deepcopy(g.board.state), pred.winProb(deepcopy(g.board.state))))
 #
-#model.summary()
-#
-#model.compile(optimizer='adam', loss='mean_squared_error', metrics=['accuracy'])
-#model.fit(npxtrain, npytrain, epochs=3)
-#model.evaluate(xtest, ytest)
+#trainLen = int(len(games)*0.8)
+#trainGames = [games[i] for i in range(trainLen)]
+#testGames = [games[i] for i in range(trainLen, len(games))]
+#xtrain = [i[0] for i in trainGames]
+#ytrain = [i[1] for i in trainGames]
+#xtest = [i[0] for i in testGames]
+#ytest = [i[1] for i in testGames]
+#npxtrain = np.array(xtrain)
+#npytrain = np.array(ytrain)
+#npxtest = np.array(xtest)
+#npytest = np.array(ytest)
+#np.savetxt('xtrain.txt', npxtrain)
+#np.savetxt('ytrain.txt', npytrain)
+#np.savetxt('xtest.txt', npxtest)
+#np.savetxt('ytest.txt', npytest)
+
+print('Loading data...')
+npxtrain = np.loadtxt('xtrain.txt')
+npytrain = np.loadtxt('ytrain.txt')
+npxtest = np.loadtxt('xtest.txt')
+npytest = np.loadtxt('ytest.txt')
+print('Done')
+
+inputs = tf.keras.Input(shape=(9,))
+x = tf.keras.layers.Dense(128, activation='elu')(inputs)
+x = tf.keras.layers.Dense(128, activation='elu')(x)
+x = tf.keras.layers.Dense(128, activation='elu')(x)
+outputs = tf.keras.layers.Dense(1, activation='softmax')(x)
+model = tf.keras.Model(inputs = inputs, outputs=outputs)
+
+model.summary()
+
+early_stop = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=2)
+
+model.compile(optimizer='adam', loss='mean_squared_error', metrics=['accuracy'])
+model.fit(npxtrain, npytrain, epochs=10)
+model.evaluate(npxtest, npytest)
