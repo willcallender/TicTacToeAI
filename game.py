@@ -104,6 +104,21 @@ class Board:
         """Initialize board state to a list of zeros."""
         self.state = [0] * 9
 
+    def evaluate(self):
+        """Evaluate board.
+
+        Returns 'X', 'O', 'CAT', or None.
+
+        """
+        win = self.win()
+        if win:
+            return win
+        tie = self.tie()
+        if tie:
+            return 0
+        else:
+            return None
+
     def win(self):
         """Check for win condition.
 
@@ -222,7 +237,7 @@ class Game:
                 print("Move not recognized")
             if self.show_moves:
                 self.printBoard()
-        return self.win(), self.tie()
+        return self.evaluate()
 
     def reset(self):
         """Reset the board and turn."""
@@ -239,6 +254,10 @@ class Game:
             return True
         else:
             return False
+
+    def evaluate(self):
+        """Return board evaluation."""
+        return self.board.evaluate()
 
     def win(self):
         """Return if game is won and by which player."""
@@ -259,7 +278,7 @@ class Game:
     def tie(self):
         """Return True or False if game is a tie."""
         return self.board.tie()
-    
+
     def over(self):
         """Returns true if game is over, otherwise false"""
         if self.win() != 0 or self.tie():
