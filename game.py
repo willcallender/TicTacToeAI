@@ -209,6 +209,14 @@ class Game:
         self._turn = turn
         self.show_moves = show_moves
 
+    @property
+    def state(self):
+        return self.board.state
+
+    @state.setter
+    def state(self, state):
+        self.board.state = state
+
     def whoTurn(self):
         """Return current player (either 1 or -1)."""
         return self._turn
