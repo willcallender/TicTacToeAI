@@ -1,8 +1,8 @@
-# import tensorflow as tf
-# print("Tensorflow successfully loaded")
+import tensorflow as tf
+print("Tensorflow successfully loaded")
 import random
 from copy import deepcopy
-# import numpy as np
+import numpy as np
 
 
 class Player:
@@ -25,7 +25,6 @@ class Human(Player):
         game.printBoard()
         print("Input move")
         return int(input()) - 1
-
 
 class RandomAI(Player):
     """AI picks a random legal move."""
@@ -78,6 +77,25 @@ class WinPreventAI(Player):
 
         return random.choice(moves)
 
+class MonteCarloPredictor(Player):
+    """Doesn't return move, returns probability of win from a given position, player to move must always be X"""
+    def winProb(self, state, n=1000):      # returns probability of win, state must always have player to analyze as X
+        wins = 0
+        losses = 0  # losses and ties may be utilized in the future
+        ties = 0
+        for _ in range(n):
+            s = deepcopy(state)
+            g = Game(turn=-1)
+            g.board.state = s
+            winner, tie = g.play(RandomAI(), RandomAI())
+            if not tie:
+                if winner == 1:   # if not a tie and winner was X
+                    wins = wins + 1
+                else:
+                    losses = losses + 1
+            else:
+                ties = ties + 1
+        return wins/n
 
 class Board:
     """Class for tic-tac-toe style board game."""
@@ -194,7 +212,7 @@ class Game:
     def play(self, player1, player2):
         """Play tic-tac-toe."""
         players = {1: player1, -1: player2}
-        while self.win() == 0 and not self.tie():
+        while not self.over():
             current_player = players[self._turn]
             move = current_player.move(self)
             try:
@@ -241,66 +259,60 @@ class Game:
     def tie(self):
         """Return True or False if game is a tie."""
         return self.board.tie()
+    
+    def over(self):
+        """Returns true if game is over, otherwise false"""
+        if self.win() != 0 or self.tie():
+            return True
+        return False
 
     def printBoard(self):
         """Pretty print tic-tac-toe board."""
         self.board.printBoard()
+        predict = MonteCarloPredictor()
+        print(predict.predScore(self.board.state))
         print("\n\n")
 
     def legalMoves(self):
         """Return list of legal moves on internal board object."""
         return self.board.legalMoves()
 
-
-#g = Game(show_moves=True)
-#g.play(NextWinAI(), WinPreventAI())
-
-n = 10000
-randomWins = 0
-nextWinWins = 0
-winPreventWins = 0
+n=1000000
+games = []
 game = Game()
+pred = MonteCarloPredictor()
+ai = RandomAI()
 for i in range(n):
-    game.reset()
-    (winner, tie) = game.play(RandomAI(), NextWinAI())
-    if winner == 1:
-        randomWins += 1
-    elif winner == -1:
-        nextWinWins += 1
+    g = deepcopy(game)
+    while not g.over():
+        g.move(ai.move(g))
+        games.append((deepcopy(g.board.state), pred.winProb(deepcopy(g.board.state))))
 
-    game.reset()
-    (winner, tie) = game.play(NextWinAI(), RandomAI())
-    if winner == 1:
-        nextWinWins += 1
-    elif winner == -1:
-        randomWins += 1
+trainLen = int(len(games)*0.8)
+trainGames = [games[i] for i in range(trainLen)]
+testGames = [games[i] for i in range(trainLen, len(games))]
+xtrain = [i[0] for i in trainGames]
+ytrain = [i[1] for i in trainGames]
+xtest = [i[0] for i in testGames]
+ytest = [i[1] for i in testGames]
+npxtrain = np.array(xtrain)
+npytrain = np.array(ytrain)
+npxtest = np.array(xtest)
+npytest = np.array(ytest)
+np.savetxt('xtrain.txt', npxtrain)
+np.savetxt('ytrain.txt', npytrain)
+np.savetxt('xtest.txt', npxtest)
+np.savetxt('ytest.txt', npytest)
 
-    game.reset()
-    (winner, tie) = game.play(NextWinAI(), WinPreventAI())
-    if winner == 1:
-        nextWinWins += 1
-    elif winner == -1:
-        winPreventWins += 1
-
-    game.reset()
-    (winner, tie) = game.play(WinPreventAI(), NextWinAI())
-    if winner == 1:
-        winPreventWins += 1
-    elif winner == -1:
-        nextWinWins += 1
-
-    game.reset()
-    (winner, tie) = game.play(RandomAI(), WinPreventAI())
-    if winner == 1:
-        randomWins += 1
-    elif winner == -1:
-        winPreventWins += 1
-
-    game.reset()
-    (winner, tie) = game.play(WinPreventAI(), RandomAI())
-    if winner == 1:
-        winPreventWins += 1
-    elif winner == -1:
-        randomWins += 1
-
-print(randomWins, nextWinWins, winPreventWins)
+#inputs = tf.keras.Input(shape=(9,))
+#x = tf.keras.layers.Dense(128, activation='elu')(inputs)
+#x = tf.keras.layers.Dense(128, activation='elu')(x)
+#x = tf.keras.layers.Dense(128, activation='relu')(x)
+#outputs = tf.keras.layers.Dense(1, activation='softmax')(x)
+#model = tf.keras.Model(inputs = inputs, outputs=outputs)
+#
+#model.summary()
+#
+#model.compile(optimizer='adam', loss='mean_squared_error', metrics=['accuracy'])
+#model.fit(npxtrain, npytrain, epochs=3)
+#model.evaluate(xtest, ytest)
